@@ -1,0 +1,38 @@
+
+{
+  "inputDataSet": [
+    {
+      "filePath": "dataset1.csv",
+      "viewName": "input_df1"
+    },
+    {
+      "filePath": "dataset2.csv",
+      "viewName": "input_df2"
+    }
+  ],
+  "etlMap": [
+    {
+      "sql": "select a.legal_entity, a.counter_party, b.tier, a.rating, a.status, a.value from input_df1 a, input_df2 b where  a.counter_party = b.counter_party",
+      "viewName": "base_df"
+    },
+    {
+      "sql": "select *, case when status = \"ARAP\" then value else 0 end arap_value, case when status = \"ACCR\" then value else 0 end accr_value from base_df",
+      "viewName": "vals_df"
+    },
+    {
+      "sql": "select counter_party, max(rating) max_counter_party_rating from base_df group by counter_party",
+      "viewName": "rating_df"
+    },
+    {
+      "sql": "select  legal_entity, counter_party, tier, sum(arap_value) sum_arap_value, sum(accr_value) sum_accr_value from vals_df group by legal_entity, counter_party, tier",
+      "viewName": "aggs_df"},
+    {
+      "sql": "select a.legal_entity, a.counter_party, a.tier, b.max_counter_party_rating, sum_arap_value, sum_accr_value from aggs_df a, rating_df b where a.counter_party = b.counter_party",
+      "viewName": "output_df"
+    }
+  ],
+  "outputConfig": {
+    "outputFilePath": "output.csv",
+    "outputFileHeader": "legal_entity, counterparty, tier, max(rating by counterparty), sum(value where status=ARAP), sum(value where status=ACCR)\n"
+  }
+}
